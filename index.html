@@ -87,6 +87,9 @@ footer{text-align:center;padding:25px;color:#a99abf}
   <h2>03 / Step Into Your Dream</h2>
   <p>Allow camera access and point it at a printed Hiro marker.</p>
   <a-scene embedded
+   <a-assets>
+  <img id="arTexture" crossorigin="anonymous">
+</a-assets>
    arjs="sourceType: webcam; debugUIEnabled: false;"
    vr-mode-ui="enabled: false">
    <a-marker preset="hiro">
@@ -167,13 +170,37 @@ function saveArt(){
  link.download="my-dreamscape.png";
  link.click();
 }
+async function enterAR(){
+  if(!currentImage) return;
 
-function enterAR(){  
- if(!currentImage)return;
- document.getElementById("arbox").style.display="block";
- document.getElementById("portalImage").setAttribute(
-  "material","shader: flat; src: "+currentImage+"; side: double"
- );
+  document.getElementById("arbox").style.display = "block";
+
+  const texture = document.getElementById("arTexture");
+  const portal = document.getElementById("portalImage");
+
+  texture.src = currentImage;
+
+  try {
+    await texture.decode();
+
+    portal.setAttribute("material", {
+      shader: "flat",
+      src: "#arTexture",
+      side: "double"
+    });
+
+    portal.setAttribute("rotation","-90 0 0" );
+    portal.setAttribute("position", "0 0 0");
+
+    document.getElementById("arbox").scrollIntoView({
+      behavior: "smooth"
+    });
+  } catch(error) {
+    alert("The AR image could not load. Please generate your image again.");
+    console.error(error);
+  }
+} 
+ 
  document.getElementById("arbox").scrollIntoView({behavior:"smooth"});
 }
 </script>
