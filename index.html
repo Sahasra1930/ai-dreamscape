@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Dreamscape | Enter Your Imagination</title>
+
+<script src="https://js.puter.com/v2/"></script>
+<script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ font-family:Arial,sans-serif;
+ color:white;
+ background:radial-gradient(circle at top,#30205b,#090817 65%);
+ min-height:100vh;
+}
+header{text-align:center;padding:35px 15px 15px}
+h1{font-size:clamp(35px,7vw,65px);margin:10px 0;color:#d9b8ff}
+header p{color:#c9bddc}
+main{max-width:950px;margin:auto;padding:20px}
+.panel{
+ background:#ffffff10;border:1px solid #ffffff30;
+ border-radius:20px;padding:25px;margin:20px 0;
+}
+textarea{
+ width:100%;min-height:110px;padding:15px;
+ border-radius:12px;border:1px solid #bda0ff;
+ background:#100d24;color:white;font-size:16px;
+}
+button{
+ border:0;border-radius:30px;padding:13px 22px;
+ margin:8px 5px 0 0;font-weight:bold;cursor:pointer;
+ background:#c69aff;color:#180c2c;
+}
+button:hover{background:#ead5ff}
+#status{color:#e3ceff;min-height:25px;margin-top:15px}
+#art{width:100%;max-height:450px;object-fit:contain;
+ border-radius:15px;margin-top:15px;display:none}
+#story{line-height:1.7;color:#eee}
+.samples button{background:#32234f;color:white}
+#arbox{display:none;margin-top:20px}
+#arbox a-scene{width:100%;height:450px}
+footer{text-align:center;padding:25px;color:#a99abf}
+</style>
+</head>
+
+<body>
+<header>
+ <h1>✦ AI DREAMSCAPE ✦</h1>
+ <p>Imagine a world. Let AI create it. Step inside your dream.</p>
+</header>
+
+<main>
+ <section class="panel">
+  <h2>01 / Describe Your Dream</h2>
+  <p>What would your imaginary world look like?</p>
+
+  <textarea id="prompt" placeholder="Example: A magical floating city above the clouds, glowing waterfalls, purple skies and beautiful futuristic castles..."></textarea>
+
+  <div class="samples">
+   <p>Need inspiration?</p>
+   <button onclick="sample(0)">Floating Garden</button>
+   <button onclick="sample(1)">Underwater City</button>
+   <button onclick="sample(2)">Galaxy Castle</button>
+  </div>
+
+  <button id="generate" onclick="generateDream()">✧ Generate My Dream</button>
+  <p id="status">Your imagination is waiting...</p>
+ </section>
+
+ <section class="panel">
+  <h2>02 / Your AI Dream World</h2>
+  <img id="art" alt="Your generated dream world">
+  <h3 id="storyTitle"></h3>
+  <p id="story"></p>
+  <button id="arButton" onclick="enterAR()" style="display:none">Enter AR Experience</button>
+  <button id="saveButton" onclick="saveArt()" style="display:none">Save Artwork</button>
+ </section>
+
+ <section class="panel" id="arbox">
+  <h2>03 / Step Into Your Dream</h2>
+  <p>Allow camera access and point it at a printed Hiro marker.</p>
+  <a-scene embedded
+   arjs="sourceType: webcam; debugUIEnabled: false;"
+   vr-mode-ui="enabled: false">
+   <a-marker preset="hiro">
+    <a-plane id="portalImage" position="0 0.8 0"
+     rotation="-90 0 0" width="2" height="1.4"
+     material="shader: flat; side: double">
+    </a-plane>
+    <a-torus position="0 0.8 0" rotation="-90 0 0"
+     radius="1.1" radius-tubular="0.035"
+     color="#c69aff"></a-torus>
+   </a-marker>
+   <a-entity camera></a-entity>
+  </a-scene>
+  <p>Tip: Search online for "AR.js Hiro marker" and print the marker.</p>
+ </section>
+</main>
+
+<footer>AI DREAMSCAPE · Where imagination becomes an experience ✦</footer>
+
+<script>
+const examples=[
+ "A magical floating garden in the sky, glowing flowers, waterfalls falling into clouds, dreamy pink and purple sunset, fantasy digital art",
+ "A futuristic underwater city with glowing glass buildings, colourful fish, coral gardens and blue light rays, cinematic fantasy art",
+ "A giant fantasy castle floating in a galaxy, surrounded by stars, glowing planets, purple nebula and magical bridges, cinematic digital art"
+];
+
+let currentImage="";
+
+function sample(i){
+ document.getElementById("prompt").value=examples[i];
+}
+
+async function generateDream(){
+ const prompt=document.getElementById("prompt").value.trim();
+ if(!prompt){alert("Please describe your dream world first!");return;}
+
+ const status=document.getElementById("status");
+ const button=document.getElementById("generate");
+ button.disabled=true;
+ status.textContent="Creating your dream world... Please wait.";
+
+ try{
+  const results=await Promise.all([
+   puter.ai.txt2img(prompt),
+   puter.ai.chat("Write a beautiful imaginative story of 100 words about this dream world: "+prompt)
+  ]);
+
+  const image=results[0];
+  const storyResult=results[1];
+
+  currentImage=image.src || image;
+  document.getElementById("art").src=currentImage;
+  document.getElementById("art").style.display="block";
+
+  let storyText="";
+  if(typeof storyResult==="string") storyText=storyResult;
+  else if(storyResult.message && storyResult.message.content)
+   storyText=storyResult.message.content;
+  else storyText=JSON.stringify(storyResult);
+
+  document.getElementById("storyTitle").textContent="Your Dream Story ✨";
+  document.getElementById("story").textContent=storyText;
+  document.getElementById("arButton").style.display="inline-block";
+  document.getElementById("saveButton").style.display="inline-block";
+  status.textContent="Your dream world has been created!";
+ }catch(error){
+  status.textContent="Something went wrong: "+error.message+
+   ". Try again or sign in to Puter if requested.";
+ }finally{
+  button.disabled=false;
+ }
+}
+
+function saveArt(){
+ if(!currentImage)return;
+ const link=document.createElement("a");
+ link.href=currentImage;
+ link.download="my-dreamscape.png";
+ link.click();
+}
+
+function enterAR(){
+ if(!currentImage)return;
+ document.getElementById("arbox").style.display="block";
+ document.getElementById("portalImage").setAttribute(
+  "material","shader: flat; src: "+currentImage+"; side: double"
+ );
+ document.getElementById("arbox").scrollIntoView({behavior:"smooth"});
+}
+</script>
+</body>
+</html>
